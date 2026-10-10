@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    kotlin("jvm") version "2.4.21"
+    kotlin("jvm") version "1.9.25"
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -15,8 +15,8 @@ plugins {
 // ---------------------------------------------------------------------------------------------
 
 val appId = "com.dhruvtilva.pushalert"
-val appVersionName = "1.0.0"
-val appVersionCode = 1
+val appVersionName = "1.0.1"
+val appVersionCode = 2
 val minSdk = 26
 val targetSdk = 34
 
@@ -34,6 +34,7 @@ val platformJar: File = sdkRoot.resolve("platforms").listFiles { f -> f.isDirect
     ?: sdkRoot.resolve("platforms/missing/android.jar")
 
 val frameworkApiJar: Configuration by configurations.creating
+val robolectricRuntime: Configuration by configurations.creating { isTransitive = false }
 
 kotlin {
     jvmToolchain(21)
@@ -46,24 +47,49 @@ kotlin {
         allWarningsAsErrors.set(true)
     }
 }
-tasks.withType<JavaCompile>().configureEach { options.release.set(8) }
+tasks.compileJava { options.release.set(8) }
+tasks.compileTestJava { options.release.set(17) }
+// Only the shipped app must be Java-8 bytecode (for dx); tests run on the JDK and may use newer libraries.
+tasks.compileTestKotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_17); freeCompilerArgs.set(emptyList()) } }
+configurations.matching { it.name.startsWith("test") }.configureEach {
+    attributes.attribute(org.gradle.api.attributes.java.TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, 17)
+}
 
 dependencies {
     // Compile against the full Android API (API 34). Not packaged: the phone provides it at runtime.
     compileOnly("org.robolectric:android-all:14-robolectric-10818077")
     frameworkApiJar("org.robolectric:android-all:14-robolectric-10818077")
+    robolectricRuntime("org.robolectric:android-all-instrumented:14-robolectric-10818077-i7")
 
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 
     testImplementation("junit:junit:4.13.2")
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.11.0")
+    testImplementation("org.robolectric:android-all:14-robolectric-10818077")
+    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
     testImplementation("org.xerial:sqlite-jdbc:3.46.1.3")
+    // Robolectric smoke tests (launch the real Application/Activity). Its androidx.test dependencies live only on
+    // Google Maven (unreachable here), so they are excluded and replaced by tiny stubs under src/test.
+    testImplementation("org.robolectric:robolectric:4.17") {
+        listOf("androidx.test", "androidx.test.espresso", "androidx.test.ext", "androidx.test.services", "androidx.annotation")
+            .forEach { exclude(group = it) }
+    }
     // The real Android classes are not needed by unit tests (the domain code is Android-free), but the
     // android-all jar is on the compile classpath only, so tests cannot accidentally depend on it.
 }
 
+val robolectricDeps = layout.buildDirectory.dir("robolectric-deps")
+val prepareRobolectric by tasks.registering(Copy::class) {
+    from(robolectricRuntime)
+    into(robolectricDeps)
+}
+
 tasks.test {
     useJUnit()
+    forkEvery = 1 // Robolectric must not share a JVM with tests that load android.* classes directly
+    dependsOn(prepareRobolectric)
+    // Offline: the framework jar comes from Gradle's cache (Maven Central), not a runtime download.
+    systemProperty("robolectric.offline", "true")
+    systemProperty("robolectric.dependency.dir", robolectricDeps.get().asFile.absolutePath)
     testLogging {
         events("passed", "failed", "skipped")
         showStandardStreams = false

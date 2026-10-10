@@ -34,7 +34,7 @@ Inbox · Sent · Settings (WhatsApp collection & group filters, Discord webhook,
 
 ## Install the APK
 
-The prebuilt debug APK is at **`artifacts/365-push-alert-debug.apk`** (application id `com.dhruvtilva.pushalert`, version 1.0.0, minSdk 26 / Android 8.0, targetSdk 34).
+The prebuilt debug APK is at **`artifacts/365-push-alert-debug.apk`** (application id `com.dhruvtilva.pushalert`, version 1.0.1, minSdk 26 / Android 8.0, targetSdk 34).
 
 1. Copy the APK to your phone (download from the repo, USB, cloud drive, …) or use `adb install -r artifacts/365-push-alert-debug.apk`.
 2. Open it on the phone and allow *Install unknown apps* for the app you opened it from.
@@ -84,6 +84,12 @@ Messages are sent with `allowed_mentions: {parse: []}`, so forwarded text contai
 - Nothing is published automatically; every batch needs your confirmation.
 - Notification access is a powerful permission; you can revoke it in Android settings any time, or switch collection off inside the app.
 
+## If the app closes on start
+
+A crash is recorded locally and shown on the next launch as an on-screen report with a **Copy report** button (nothing is sent anywhere). Send that text to the developer. **Clear and retry** dismisses it.
+
+Version history: 1.0.1 fixes a start-up failure seen on a real phone by moving to a Kotlin 1.9.25 toolchain whose bytecode the `dx` dexer converts reliably (the 1.0.0 build used libraries containing `invokedynamic` call sites) and by dropping `kotlinx-coroutines-android` in favour of a small own main-thread dispatcher.
+
 ## Known limitations
 
 - Notification-based capture is **best-effort**. Missing, delayed, truncated, summarised or hidden notifications cannot be recovered. Long messages may arrive cut off by WhatsApp (flagged *may be truncated*).
@@ -98,7 +104,7 @@ Messages are sent with `allowed_mentions: {parse: []}`, so forwarded text contai
 
 | Area | Status |
 |---|---|
-| 165 JVM unit tests (parser, group filter, de-dup, store/SQL, migrations, editing, state machine, Discord client, real HTTP transport against local servers, publisher scenarios, secret storage) | executed, all pass |
+| 168 JVM tests (parser, group filter, de-dup, store/SQL, migrations, editing, state machine, Discord client, real HTTP transport against local servers, publisher scenarios, secret storage) plus Robolectric tests that launch the real Application/Activity on real Android framework code (real SQLite and Views) | executed, all pass |
 | Kotlin compile with warnings-as-errors; permission / secret / logging static checks | executed, pass |
 | APK builds, aligned, signed (v2/v3), manifest & permissions inspected with `aapt` | executed, pass |
 | Android API use audited against min SDK 26 | done (no newer API used) |

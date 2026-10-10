@@ -86,3 +86,7 @@ With **Keep Sent History** off, no history row is written: the content disappear
 ## 9. Database
 
 SQLite (`pushalert.db`, WAL). Tables: `group_filters`, `messages`, `sent_history`, `seen_fingerprints`, `diagnostics`. Version 2; `Schema` holds the v1 DDL and the ordered migration list (`1→2` adds `collected_count` with back-fill and the `diagnostics` table). Tests create a v1 database with data, migrate it, and assert the result equals a fresh v2 schema.
+
+## 10. Build toolchain note (dexing)
+
+The APK is dexed with `dx` (build-tools 29), because D8/R8 are only published on the unreachable Google Maven repository. `dx` is old, so the app deliberately uses the Kotlin **1.9.25** compiler with matching stdlib 1.9.25 and coroutines-core 1.8.1 (compiler and runtime library versions must match: a newer compiler emits helper calls such as `kotlin.coroutines.jvm.internal.SpillingKt` that older stdlibs lack), compiles lambdas/SAMs to classes (`-Xlambdas=class -Xsam-conversions=class`), and avoids `kotlinx-coroutines-android`. The remaining `invoke-custom` sites in the dex are in library classes the app never loads (comparator helpers, Future/Stream interop, thread-pool, debug agent).

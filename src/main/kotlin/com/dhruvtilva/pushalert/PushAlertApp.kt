@@ -15,10 +15,12 @@ import com.dhruvtilva.pushalert.discord.DiscordClient
 import com.dhruvtilva.pushalert.discord.UrlConnectionTransport
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
 /** Hand-wired object graph; small enough that a DI framework would only add weight. */
+@OptIn(ExperimentalCoroutinesApi::class)
 class AppGraph(context: Context) {
     val settings = SettingsStore(PrefsKeyValueStore(context.getSharedPreferences("settings", Context.MODE_PRIVATE)))
     val secrets by lazy { SecretStore(PrefsKeyValueStore(context.getSharedPreferences("secrets", Context.MODE_PRIVATE)), KeystoreCipher()) }
@@ -34,19 +36,22 @@ class AppGraph(context: Context) {
     @Volatile var inboxSearch: String = ""
     @Volatile var inboxGroupFilter: String? = null
     @Volatile var lastWebhookTestResult: String? = null
+
+    init {
+        appScope.launch {
+            secrets // warm up keystore access off the main thread
+            store.recoverInterrupted() // sends interrupted by a process kill may or may not have arrived
+            store.pruneSeen()
+        }
+    }
 }
 
 class PushAlertApp : Application() {
-    lateinit var graph: AppGraph
-        private set
+    /** Created on first use so that a failure is reported by [CrashReporter] instead of killing the process in onCreate. */
+    val graph: AppGraph by lazy { AppGraph(this) }
 
     override fun onCreate() {
         super.onCreate()
-        graph = AppGraph(this)
-        graph.appScope.launch {
-            graph.secrets // warm up keystore access off the main thread
-            graph.store.recoverInterrupted()
-            graph.store.pruneSeen()
-        }
+        CrashReporter.install(this)
     }
 }

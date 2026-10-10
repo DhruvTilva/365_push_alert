@@ -171,7 +171,7 @@ class InboxScreen(private val activity: Activity, private val graph: AppGraph, p
     }
 
     private fun rebuildGroupSpinner() {
-        val names = (groups.map { it.groupName } + all.map { it.groupName }).distinct().sortedBy { it.lowercase() }
+        val names = (groups.map { it.groupName } + all.map { it.groupName }).distinct().sortedWith(String.CASE_INSENSITIVE_ORDER)
         val choices = listOf(ALL_GROUPS) + names
         if (choices == groupChoices) return
         groupChoices = choices
@@ -265,7 +265,7 @@ class InboxScreen(private val activity: Activity, private val graph: AppGraph, p
             .setTitle("Publish ${messages.size} message(s)?")
             .setView(sv)
             .setPositiveButton("Send") { _, _ ->
-                when (val r = graph.publisher.start(messages.map { it.id })) {
+                when (graph.publisher.start(messages.map { it.id })) {
                     is StartResult.Started -> Unit
                     StartResult.AlreadyRunning -> toast("A batch is already running.")
                     StartResult.NoWebhook -> toast("Webhook is not configured.")
