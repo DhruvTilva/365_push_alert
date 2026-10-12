@@ -49,6 +49,16 @@ class InboxScreen(private val activity: Activity, private val graph: AppGraph, p
     private val accessButton = ui.button("Open notification access settings") {
         activity.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
     }
+    private val restrictedButton = ui.button("Step 1: Allow restricted settings (App info)") {
+        activity.startActivity(
+            Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, android.net.Uri.parse("package:${activity.packageName}")),
+        )
+    }
+    private val restrictedHelp = ui.text(
+        "If the notification-access switch is greyed out (\"Controlled by restricted setting\"): tap the greyed switch once, press OK, " +
+            "then open App info here → ⋮ (top right) → Allow restricted settings → confirm. Then use the button above to enable access.",
+        13f, p.warn,
+    )
     private val hint = ui.text("", 13f, p.warn)
     private val summary = ui.text("", 15f, p.text, true)
     private val search = ui.input("Search messages").apply { setText(graph.inboxSearch) }
@@ -73,6 +83,8 @@ class InboxScreen(private val activity: Activity, private val graph: AppGraph, p
         val accessCard = ui.card().apply {
             addView(accessBanner)
             addView(accessButton, ui.lp(top = 6))
+            addView(restrictedButton, ui.lp(top = 6))
+            addView(restrictedHelp, ui.lp(top = 4))
             addView(hint, ui.lp(top = 4))
         }
         root.addView(accessCard, ui.lp(bottom = 8))
@@ -160,6 +172,9 @@ class InboxScreen(private val activity: Activity, private val graph: AppGraph, p
         accessBanner.text = text
         accessBanner.setTextColor(color)
         accessButton.visibility = if (granted) View.GONE else View.VISIBLE
+        val showRestrictedHelp = !granted && android.os.Build.VERSION.SDK_INT >= 33
+        restrictedButton.visibility = if (showRestrictedHelp) View.VISIBLE else View.GONE
+        restrictedHelp.visibility = if (showRestrictedHelp) View.VISIBLE else View.GONE
         if (granted && !connected) PushAlertListenerService.requestRebindIfNeeded(activity)
         renderHint()
     }
