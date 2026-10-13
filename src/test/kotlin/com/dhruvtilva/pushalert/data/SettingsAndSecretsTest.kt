@@ -89,4 +89,26 @@ class SettingsAndSecretsTest {
         val kv = MemoryKv().also { it.putString("webhook_v1", "!!!not base64!!!") }
         assertEquals(SecretState.Unreadable, SecretStore(kv, SoftwareCipher()).webhook.value)
     }
+
+    @Test fun headerTitleAndNumberPersistAndAdvance() {
+        val kv = MemoryKv()
+        val a = SettingsStore(kv)
+        assertEquals("Terminal365 Update", a.settings.value.headerTitle)
+        assertEquals(1L, a.settings.value.nextUpdateNumber)
+        assertNull(a.setHeader("  My Feed ", "41"))
+        a.advanceUpdateNumber()
+        val b = SettingsStore(kv).settings.value
+        assertEquals("My Feed", b.headerTitle)
+        assertEquals(42L, b.nextUpdateNumber)
+    }
+
+    @Test fun invalidHeaderSettingsAreRejected() {
+        val a = SettingsStore(MemoryKv())
+        assertNotNull(a.setHeader("", "1"))
+        assertNotNull(a.setHeader("x".repeat(41), "1"))
+        assertNotNull(a.setHeader("two\nlines", "1"))
+        assertNotNull(a.setHeader("ok", "0"))
+        assertNotNull(a.setHeader("ok", "abc"))
+        assertEquals("Terminal365 Update", a.settings.value.headerTitle)
+    }
 }

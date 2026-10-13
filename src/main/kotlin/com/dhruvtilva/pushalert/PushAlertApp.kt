@@ -30,7 +30,7 @@ class AppGraph(context: Context) {
 
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val collectScope = CoroutineScope(SupervisorJob() + Dispatchers.IO.limitedParallelism(1))
-    val publisher by lazy { BatchPublisher(store, client, { secrets.current() }, { settings.settings.value }, appScope) }
+    val publisher by lazy { BatchPublisher(store, client, { secrets.current() }, { settings.settings.value }, appScope, onPublished = { settings.advanceUpdateNumber() }) }
 
     /** UI state that should survive activity re-creation (rotation, theme change). */
     @Volatile var inboxSearch: String = ""

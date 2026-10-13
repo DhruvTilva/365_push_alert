@@ -66,6 +66,8 @@ class BatchPublisher(
     private val settings: () -> AppSettings,
     private val scope: CoroutineScope,
     private val pause: suspend (Long) -> Unit = { delay(it) },
+    private val zone: java.util.TimeZone = java.util.TimeZone.getDefault(),
+    private val onPublished: () -> Unit = {},
 ) {
     private val running = AtomicBoolean(false)
     @Volatile private var cancelRequested = false
@@ -74,7 +76,8 @@ class BatchPublisher(
 
     suspend fun preflight(ids: List<Long>): Preflight {
         val loaded = ids.mapNotNull { store.getMessage(it) }.filter { it.status.isSendable }
-        val invalid = loaded.map { it to TextRules.validate(it.currentText) }.filter { !it.second.isValid }
+        val cfg = settings()
+        val invalid = loaded.map { it to TextRules.validate(render(it, cfg)) }.filter { !it.second.isValid }
         return Preflight(
             webhookConfigured = webhook() != null,
             messages = loaded,
@@ -127,16 +130,18 @@ class BatchPublisher(
                 update { it.copy(skipped = it.skipped + 1) }
                 continue
             }
-            val validation = TextRules.validate(message.currentText)
+            // What is posted: the text, plus the header line when enabled (counts toward Discord's limit).
+            val content = render(message, settings())
+            val validation = TextRules.validate(content)
             if (!validation.isValid) {
-                store.markFailed(id, validation.userMessage() ?: "Invalid message.")
+                store.markFailed(id, (validation.userMessage() ?: "Invalid message.") + if (settings().addHeader) " (includes the header line; shorten it or turn the header off in Settings.)" else "")
                 update { it.copy(failed = it.failed + 1) }
                 continue
             }
 
             var stopReason: String? = null
             val step = try {
-                deliver(message, hook) { stopReason = it }
+                deliver(message, content, hook) { stopReason = it }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -161,13 +166,14 @@ class BatchPublisher(
         }
     }
 
-    private suspend fun deliver(message: PendingMessage, hook: WebhookUrl, stop: (String) -> Unit): Step {
+    private suspend fun deliver(message: PendingMessage, content: String, hook: WebhookUrl, stop: (String) -> Unit): Step {
         var rateLimitAttempts = 0
         var serverAttempts = 0
         while (true) {
-            when (val outcome = client.post(hook, message.currentText)) {
+            when (val outcome = client.post(hook, content)) {
                 is PostOutcome.Delivered -> {
                     store.markSent(message.id, outcome.messageId, settings().historyEnabled)
+                    onPublished()
                     outcome.rateLimitResetAfterMs?.let { if (it > 0) pause(it.coerceAtMost(MAX_WAIT_MS)) }
                     return Step.SENT
                 }
@@ -217,6 +223,9 @@ class BatchPublisher(
             }
         }
     }
+
+    private fun render(m: PendingMessage, cfg: AppSettings): String =
+        MessageFormat.render(m, cfg.addHeader, cfg.headerTitle, cfg.nextUpdateNumber, zone)
 
     /** Waits in short slices so a cancel request is honoured; returns false if cancelled. */
     private suspend fun waitInterruptibly(ms: Long): Boolean {

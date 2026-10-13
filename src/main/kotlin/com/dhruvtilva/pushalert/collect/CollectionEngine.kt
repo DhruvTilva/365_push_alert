@@ -52,7 +52,7 @@ class CollectionEngine(
 
         var added = 0
         var duplicates = 0
-        for (m in parsed.messages) {
+        for (m in expand(parsed.messages, cfg.splitAtBlankLines)) {
             val timed = m.timeMs != null
             val candidate = NewMessage(
                 sourcePackage = parsed.packageName,
@@ -84,6 +84,23 @@ class CollectionEngine(
             rejected = if (added == 0) RejectReason.DUPLICATE else null,
             groupName = filter.groupName,
         )
+    }
+
+    /** One notification may carry several messages separated by blank lines; make each its own entry. */
+    private fun expand(messages: List<ParsedMessage>, split: Boolean): List<ParsedMessage> {
+        if (!split) return messages
+        return messages.flatMap { m ->
+            val parts = TextRules.splitParagraphs(m.text)
+            if (parts.size <= 1) listOf(m)
+            else parts.mapIndexed { i, text ->
+                m.copy(
+                    text = text,
+                    // distinct, stable timestamps keep order and make each part's fingerprint unique but repeatable
+                    timeMs = m.timeMs?.plus(i),
+                    possiblyTruncated = m.possiblyTruncated && i == parts.lastIndex,
+                )
+            }
+        }
     }
 
     private suspend fun reject(cfg: AppSettings, reason: RejectReason, extra: String? = null): CollectionOutcome {

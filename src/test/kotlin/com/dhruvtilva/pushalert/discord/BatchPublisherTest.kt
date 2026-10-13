@@ -29,10 +29,10 @@ class BatchPublisherTest {
     private val transport = FakeTransport()
     private val client = DiscordClient(transport, Dispatchers.Unconfined)
     private var hook: WebhookUrl? = (WebhookUrl.parse(VALID_WEBHOOK) as WebhookUrl.ParseResult.Valid).url
-    private var settings = AppSettings()
+    private var settings = AppSettings(addHeader = false)
     private var n = 0
 
-    private fun TestScope.publisher() = BatchPublisher(store, client, { hook }, { settings }, this)
+    private fun TestScope.publisher() = BatchPublisher(store, client, { hook }, { settings }, this, zone = java.util.TimeZone.getTimeZone("UTC"))
 
     private suspend fun add(text: String): Long =
         (store.addIfNew(NewMessage("com.whatsapp", "Project Updates", null, null, "Alice", text, 1000L + n, "fp${n++}", true, false)) as AddResult.Added).id
@@ -320,5 +320,46 @@ class BatchPublisherTest {
         transport.enqueue(ok("1", mapOf("x-ratelimit-remaining" to "0", "x-ratelimit-reset-after" to "1.0")), ok("2"))
         run(publisher(), ids)
         assertTrue("waited ${currentTime}ms", currentTime >= 1000)
+    }
+
+    @Test fun dividerAndHeaderLinesAreAddedToEveryMessageWithRunningNumbers() = runTest {
+        settings = settings.copy(addHeader = true, headerTitle = "Terminal365 Update", nextUpdateNumber = 7)
+        val ids = listOf(add("m1"), add("m2"))
+        var published = 0
+        val pub = BatchPublisher(store, client, { hook }, { settings.copy(nextUpdateNumber = 7L + published) }, this, zone = java.util.TimeZone.getTimeZone("UTC"), onPublished = { published++ })
+        run(pub, ids)
+        assertEquals(2, transport.requests.size)
+        assertTrue(bodies()[0], bodies()[0].contains("\"content\":\"====== Terminal365 Update #7 ======\\n**Project Updates** \u00b7 Alice \u00b7 1 Jan, 00:00\\nm1\""))
+        assertTrue(bodies()[1], bodies()[1].contains("====== Terminal365 Update #8 ======") && bodies()[1].contains("\\nm2\""))
+        assertEquals("m1", store.history().last().publishedText)
+        assertEquals(2, published)
+    }
+
+    @Test fun updateNumberIsNotConsumedByFailedMessages() = runTest {
+        settings = settings.copy(addHeader = true)
+        val id = add("m1")
+        var published = 0
+        val pub = BatchPublisher(store, client, { hook }, { settings.copy(nextUpdateNumber = 1L + published) }, this, onPublished = { published++ })
+        transport.enqueue(http(400))
+        run(pub, listOf(id))
+        assertEquals(0, published)
+        pub.dismiss()
+        run(pub, listOf(id))
+        assertTrue(bodies().last().contains("#1 ======"))
+        assertEquals(1, published)
+    }
+
+    @Test fun headerCountsTowardTheDiscordLimitAndIsExplained() = runTest {
+        settings = settings.copy(addHeader = true)
+        val id = add("x".repeat(1990))
+        val pub = publisher()
+        assertEquals(1, pub.preflight(listOf(id)).invalid.size)
+        run(pub, listOf(id))
+        assertEquals(0, transport.requests.size)
+        assertTrue(store.getMessage(id)!!.lastError!!.contains("header"))
+        settings = settings.copy(addHeader = false)
+        pub.dismiss()
+        run(pub, listOf(id))
+        assertEquals(1, transport.requests.size)
     }
 }

@@ -120,6 +120,14 @@ data class AppSettings(
     val allowIndividualChats: Boolean = false,
     val historyEnabled: Boolean = true,
     val diagnosticsEnabled: Boolean = true,
+    /** Split one notification text at blank lines into separate inbox messages. */
+    val splitAtBlankLines: Boolean = true,
+    /** Start every Discord message with a bold header line (group, sender, time). */
+    val addHeader: Boolean = true,
+    /** Title in the divider line `====== <title> #<n> ======`. */
+    val headerTitle: String = "Terminal365 Update",
+    /** Number used for the next published message's divider line. */
+    val nextUpdateNumber: Long = 1,
     val whatsappPackages: Set<String> = DEFAULT_WHATSAPP_PACKAGES,
 ) {
     companion object {

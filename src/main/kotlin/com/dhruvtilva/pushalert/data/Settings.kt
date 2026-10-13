@@ -46,6 +46,10 @@ class SettingsStore(private val kv: KeyValueStore) {
             allowIndividualChats = kv.getBoolean(K_INDIVIDUAL, defaults.allowIndividualChats),
             historyEnabled = kv.getBoolean(K_HISTORY, defaults.historyEnabled),
             diagnosticsEnabled = kv.getBoolean(K_DIAGNOSTICS, defaults.diagnosticsEnabled),
+            splitAtBlankLines = kv.getBoolean(K_SPLIT, defaults.splitAtBlankLines),
+            addHeader = kv.getBoolean(K_HEADER, defaults.addHeader),
+            headerTitle = kv.getString(K_TITLE)?.takeIf { it.isNotBlank() } ?: defaults.headerTitle,
+            nextUpdateNumber = kv.getString(K_NUMBER)?.toLongOrNull()?.takeIf { it >= 1 } ?: defaults.nextUpdateNumber,
             whatsappPackages = packages,
         )
     }
@@ -53,6 +57,27 @@ class SettingsStore(private val kv: KeyValueStore) {
     fun setCollectionEnabled(v: Boolean) { kv.putBoolean(K_COLLECTION, v); state.value = state.value.copy(collectionEnabled = v) }
     fun setAllowIndividualChats(v: Boolean) { kv.putBoolean(K_INDIVIDUAL, v); state.value = state.value.copy(allowIndividualChats = v) }
     fun setHistoryEnabled(v: Boolean) { kv.putBoolean(K_HISTORY, v); state.value = state.value.copy(historyEnabled = v) }
+    /** Returns an error message, or null when saved. */
+    fun setHeader(title: String, nextNumber: String): String? {
+        val t = title.trim()
+        if (t.isEmpty() || t.length > 40 || t.contains('\n')) return "Title must be 1–40 characters on one line."
+        val n = nextNumber.trim().toLongOrNull()
+        if (n == null || n < 1 || n > 999_999_999) return "Next number must be a whole number of 1 or more."
+        kv.putString(K_TITLE, t)
+        kv.putString(K_NUMBER, n.toString())
+        state.value = state.value.copy(headerTitle = t, nextUpdateNumber = n)
+        return null
+    }
+
+    /** Called after a message was published so the next divider line gets the next number. */
+    fun advanceUpdateNumber() {
+        val n = state.value.nextUpdateNumber + 1
+        kv.putString(K_NUMBER, n.toString())
+        state.value = state.value.copy(nextUpdateNumber = n)
+    }
+
+    fun setAddHeader(v: Boolean) { kv.putBoolean(K_HEADER, v); state.value = state.value.copy(addHeader = v) }
+    fun setSplitAtBlankLines(v: Boolean) { kv.putBoolean(K_SPLIT, v); state.value = state.value.copy(splitAtBlankLines = v) }
     fun setDiagnosticsEnabled(v: Boolean) { kv.putBoolean(K_DIAGNOSTICS, v); state.value = state.value.copy(diagnosticsEnabled = v) }
 
     /** Returns an error message if any entry is not a plausible Android package name. */
@@ -77,6 +102,10 @@ class SettingsStore(private val kv: KeyValueStore) {
         private const val K_HISTORY = "history_enabled"
         private const val K_DIAGNOSTICS = "diagnostics_enabled"
         private const val K_PACKAGES = "whatsapp_packages"
+        private const val K_SPLIT = "split_at_blank_lines"
+        private const val K_HEADER = "add_header"
+        private const val K_TITLE = "header_title"
+        private const val K_NUMBER = "next_update_number"
         private val PACKAGE_NAME = Regex("^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+$")
     }
 }

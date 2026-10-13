@@ -343,6 +343,13 @@ class InboxScreen(private val activity: Activity, private val graph: AppGraph, p
         }
     }
 
+    private fun splitMessage(m: PendingMessage) {
+        scope?.launch {
+            val n = graph.store.splitMessage(m.id)
+            toast(if (n > 1) "Split into $n separate messages." else "Nothing to split.")
+        }
+    }
+
     private fun confirmDelete(m: PendingMessage) {
         AlertDialog.Builder(activity)
             .setTitle("Delete message?")
@@ -407,6 +414,9 @@ class InboxScreen(private val activity: Activity, private val graph: AppGraph, p
 
             val actions = ui.hbox()
             actions.addView(ui.button("Edit") { showEditDialog(m) }, ui.lp(w = 0, weight = 1f, end = 4))
+            if ((m.status == MessageStatus.PENDING || m.status == MessageStatus.EDITED) && TextRules.splitParagraphs(m.currentText).size > 1) {
+                actions.addView(ui.button("Split") { splitMessage(m) }, ui.lp(w = 0, weight = 1f, start = 4, end = 4))
+            }
             if (m.status == MessageStatus.DELIVERY_UNCERTAIN) {
                 actions.addView(ui.button("Resolve") { resolveUncertain(m) }, ui.lp(w = 0, weight = 1f, start = 4, end = 4))
             }
