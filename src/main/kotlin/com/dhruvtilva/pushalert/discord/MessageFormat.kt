@@ -17,7 +17,7 @@ object MessageFormat {
         DividerStyle.NONE -> null
     }
 
-    /** divider, then the message text exactly as it is (nothing else is added). */
+    /** divider, a blank line for breathing room, then the message text exactly as it is. */
     fun render(m: PendingMessage, style: DividerStyle, title: String = "Terminal365 Update", number: Long = 1): String =
-        divider(style, title, number)?.let { it + "\n" + m.currentText } ?: m.currentText
+        divider(style, title, number)?.let { it + "\n\n" + m.currentText } ?: m.currentText
 }

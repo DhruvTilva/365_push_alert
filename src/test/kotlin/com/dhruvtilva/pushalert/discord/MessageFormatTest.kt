@@ -15,7 +15,7 @@ class MessageFormatTest {
 
     @Test fun headingStyleUsesDiscordHeadingMarkdown() {
         assertEquals("### Terminal365 Update #12", MessageFormat.divider(DividerStyle.HEADING, "Terminal365 Update", 12))
-        assertEquals("### Terminal365 Update #3\n$text", MessageFormat.render(msg(), DividerStyle.HEADING, "Terminal365 Update", 3))
+        assertEquals("### Terminal365 Update #3\n\n$text", MessageFormat.render(msg(), DividerStyle.HEADING, "Terminal365 Update", 3))
     }
 
     @Test fun smallStyleUsesDiscordSubtext() {
@@ -46,6 +46,6 @@ class MessageFormatTest {
     }
 
     @Test fun editedTextIsWhatGetsRendered() {
-        assertEquals("### T #1\nnew", MessageFormat.render(msg().copy(editedText = "new"), DividerStyle.HEADING, "T", 1))
+        assertEquals("### T #1\n\nnew", MessageFormat.render(msg().copy(editedText = "new"), DividerStyle.HEADING, "T", 1))
     }
 }

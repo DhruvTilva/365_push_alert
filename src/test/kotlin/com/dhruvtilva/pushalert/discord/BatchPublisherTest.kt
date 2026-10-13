@@ -330,8 +330,8 @@ class BatchPublisherTest {
         val pub = BatchPublisher(store, client, { hook }, { settings.copy(nextUpdateNumber = 7L + published) }, this, onPublished = { published++ })
         run(pub, ids)
         assertEquals(2, transport.requests.size)
-        assertTrue(bodies()[0], bodies()[0].contains("\"content\":\"### Terminal365 Update #7\\nm1\""))
-        assertTrue(bodies()[1], bodies()[1].contains("\"content\":\"### Terminal365 Update #8\\nm2\""))
+        assertTrue(bodies()[0], bodies()[0].contains("\"content\":\"### Terminal365 Update #7\\n\\nm1\""))
+        assertTrue(bodies()[1], bodies()[1].contains("\"content\":\"### Terminal365 Update #8\\n\\nm2\""))
         assertFalse(bodies()[0].contains("Project Updates") || bodies()[0].contains("Alice"))
         assertEquals("m1", store.history().last().publishedText)
         assertEquals(2, published)
@@ -347,7 +347,7 @@ class BatchPublisherTest {
         assertEquals(0, published)
         pub.dismiss()
         run(pub, listOf(id))
-        assertTrue(bodies().last().contains("### " + settings.headerTitle + " #1\\n"))
+        assertTrue(bodies().last().contains("### " + settings.headerTitle + " #1\\n\\n"))
         assertEquals(1, published)
     }
 

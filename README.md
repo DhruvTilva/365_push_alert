@@ -36,7 +36,7 @@ Inbox · Sent · Settings (WhatsApp collection & group filters, Discord webhook,
 
 ## Install the APK
 
-The prebuilt debug APK is at **`artifacts/365-push-alert-debug.apk`** (application id `com.dhruvtilva.pushalert`, version 1.0.6, minSdk 26 / Android 8.0, targetSdk 34).
+The prebuilt debug APK is at **`artifacts/365-push-alert-debug.apk`** (application id `com.dhruvtilva.pushalert`, version 1.0.7, minSdk 26 / Android 8.0, targetSdk 34).
 
 1. Copy the APK to your phone (download from the repo, USB, cloud drive, …) or use `adb install -r artifacts/365-push-alert-debug.apk`.
 2. Open it on the phone and allow *Install unknown apps* for the app you opened it from.
