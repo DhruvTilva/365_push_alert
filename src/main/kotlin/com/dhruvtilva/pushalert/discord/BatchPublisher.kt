@@ -2,7 +2,6 @@ package com.dhruvtilva.pushalert.discord
 
 import com.dhruvtilva.pushalert.data.Store
 import com.dhruvtilva.pushalert.domain.AppSettings
-import com.dhruvtilva.pushalert.domain.DividerStyle
 import com.dhruvtilva.pushalert.domain.PendingMessage
 import com.dhruvtilva.pushalert.domain.TextRules
 import com.dhruvtilva.pushalert.domain.ValidationResult
@@ -134,7 +133,7 @@ class BatchPublisher(
             val content = render(message, settings())
             val validation = TextRules.validate(content)
             if (!validation.isValid) {
-                store.markFailed(id, (validation.userMessage() ?: "Invalid message.") + if (settings().dividerStyle != DividerStyle.NONE) " (includes the divider line; shorten it or turn the divider off in Settings.)" else "")
+                store.markFailed(id, (validation.userMessage() ?: "Invalid message.") + if (settings().dividerTemplate.isNotBlank()) " (includes the divider; shorten it or turn the divider off in Settings.)" else "")
                 update { it.copy(failed = it.failed + 1) }
                 continue
             }
@@ -225,7 +224,7 @@ class BatchPublisher(
     }
 
     private fun render(m: PendingMessage, cfg: AppSettings): String =
-        MessageFormat.render(m, cfg.dividerStyle, cfg.headerTitle, cfg.nextUpdateNumber)
+        MessageFormat.render(m, cfg.dividerTemplate, cfg.nextUpdateNumber)
 
     /** Waits in short slices so a cancel request is honoured; returns false if cancelled. */
     private suspend fun waitInterruptibly(ms: Long): Boolean {

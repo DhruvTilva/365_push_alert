@@ -120,27 +120,18 @@ data class AppSettings(
     val allowIndividualChats: Boolean = false,
     val historyEnabled: Boolean = true,
     val diagnosticsEnabled: Boolean = true,
-    /** How each Discord message is visually separated from the previous one. */
-    val dividerStyle: DividerStyle = DividerStyle.HEADING,
-    /** Title in the divider, e.g. `### <title> #<n>`. */
-    val headerTitle: String = "\uD83D\uDCE2 Terminal365 Update",
+    /**
+     * Text placed above every Discord message (followed by a blank line). Placeholders: {n} running number,
+     * {group}, {sender}, {date}, {time}. Blank = no divider.
+     */
+    val dividerTemplate: String = DEFAULT_DIVIDER,
     /** Number used for the next published message's divider line. */
     val nextUpdateNumber: Long = 1,
     val whatsappPackages: Set<String> = DEFAULT_WHATSAPP_PACKAGES,
 ) {
     companion object {
+        const val DEFAULT_DIVIDER = "### \uD83D\uDCE2 Terminal365 Update #{n}"
         val DEFAULT_WHATSAPP_PACKAGES: Set<String> = linkedSetOf("com.whatsapp", "com.whatsapp.w4b")
     }
 }
 
-/** How the "Terminal365 Update #N" divider is rendered in Discord (all use Discord's own markdown). */
-enum class DividerStyle(val label: String) {
-    HEADING("Heading (big bold text)"),
-    SMALL("Small grey label"),
-    LINE("Line + bold title"),
-    NONE("No divider");
-
-    companion object {
-        fun parse(value: String?): DividerStyle = values().firstOrNull { it.name == value } ?: HEADING
-    }
-}

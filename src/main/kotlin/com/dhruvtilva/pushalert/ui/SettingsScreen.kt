@@ -60,27 +60,6 @@ class SettingsScreen(private val activity: Activity, private val graph: AppGraph
 
         collectionCheck = ui.check("Collect WhatsApp notifications", s.settings.value.collectionEnabled) { s.setCollectionEnabled(it) }
         col.addView(collectionCheck)
-        col.addView(ui.text("Divider above every Discord message", 14f, p.text, true), ui.lp(top = 10))
-        val styleSpinner = android.widget.Spinner(activity)
-        val styles = com.dhruvtilva.pushalert.domain.DividerStyle.values().toList()
-        styleSpinner.adapter = android.widget.ArrayAdapter(activity, android.R.layout.simple_spinner_dropdown_item, styles.map { it.label })
-        styleSpinner.setSelection(styles.indexOf(s.settings.value.dividerStyle))
-        styleSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: android.widget.AdapterView<*>?, v: View?, pos: Int, id: Long) { s.setDividerStyle(styles[pos]) }
-            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
-        }
-        col.addView(styleSpinner)
-        val titleInput = ui.input("Divider title").apply { setText(s.settings.value.headerTitle) }
-        val numberInput = ui.input("Next number").apply {
-            setText(s.settings.value.nextUpdateNumber.toString()); inputType = InputType.TYPE_CLASS_NUMBER
-        }
-        col.addView(ui.sub("Example: ### <title> #<number>. You can put emojis in the title, e.g. \uD83D\uDCE2 \uD83D\uDEA8 \uD83D\uDCC8. The received message text is never changed or split."), ui.lp(top = 4))
-        col.addView(titleInput)
-        col.addView(numberInput)
-        col.addView(ui.button("Save divider") {
-            val err = s.setHeader(titleInput.text.toString(), numberInput.text.toString())
-            toast(err ?: "Saved. Next message: ${s.settings.value.headerTitle} #${s.settings.value.nextUpdateNumber}")
-        }, ui.lp(top = 4))
         individualCheck = ui.check("Also collect individual chats whose contact name matches a configured name", s.settings.value.allowIndividualChats) { s.setAllowIndividualChats(it) }
         col.addView(individualCheck)
 
@@ -132,6 +111,46 @@ class SettingsScreen(private val activity: Activity, private val graph: AppGraph
         col.addView(hookRow)
         col.addView(testResult, ui.lp(top = 6))
         col.addView(ui.sub("The webhook URL is stored encrypted with an Android Keystore key and is never shown in full or logged. \"Test connection\" only reads the webhook's metadata; it posts nothing to your channel. A webhook can only post messages to its one channel."), ui.lp(top = 4))
+
+
+        // ---- Divider (fully editable text above every Discord message)
+        col.addView(ui.text("Divider above every Discord message", 16f, p.text, true), ui.lp(top = 14))
+        col.addView(ui.sub("Any text, emojis and Discord formatting (### = heading, -# = small, ** = bold). Placeholders: {n} running number, {group}, {sender}, {date}, {time}. Leave empty for no divider. A blank line is added after it."), ui.lp(bottom = 4))
+        val dividerInput = ui.input("Divider text", multiline = true).apply { minLines = 2; setText(s.settings.value.dividerTemplate) }
+        val numberInput = ui.input("Next number").apply {
+            setText(s.settings.value.nextUpdateNumber.toString()); inputType = InputType.TYPE_CLASS_NUMBER
+        }
+        val preview = ui.text("", 14f, p.text)
+        val previewBox = ui.card().apply { addView(ui.sub("Preview of the next message's first lines:")); addView(preview, ui.lp(top = 4)) }
+        fun refreshPreview() {
+            val n = numberInput.text.toString().toLongOrNull() ?: 1L
+            val sample = com.dhruvtilva.pushalert.domain.PendingMessage(
+                0, "", "Sample Group", null, "Sample Sender", "Your message text appears here.", null, System.currentTimeMillis(),
+                "", com.dhruvtilva.pushalert.domain.MessageStatus.PENDING, false, null, null, null, 0, 0, false,
+            )
+            preview.text = com.dhruvtilva.pushalert.discord.MessageFormat.render(sample, dividerInput.text.toString(), n)
+        }
+        val watcher = object : android.text.TextWatcher {
+            override fun beforeTextChanged(t: CharSequence?, st: Int, c: Int, a: Int) {}
+            override fun onTextChanged(t: CharSequence?, st: Int, b: Int, c: Int) {}
+            override fun afterTextChanged(e: android.text.Editable?) = refreshPreview()
+        }
+        dividerInput.addTextChangedListener(watcher)
+        numberInput.addTextChangedListener(watcher)
+        refreshPreview()
+        col.addView(dividerInput)
+        col.addView(ui.text("Next number", 13f, p.subtext), ui.lp(top = 6))
+        col.addView(numberInput)
+        col.addView(previewBox, ui.lp(top = 6))
+        val dividerRow = ui.hbox()
+        dividerRow.addView(ui.button("Save divider", filled = true) {
+            val err = s.setDivider(dividerInput.text.toString(), numberInput.text.toString())
+            toast(err ?: "Divider saved.")
+        }, ui.lp(w = 0, weight = 1f, end = 4))
+        dividerRow.addView(ui.button("Reset to default") {
+            dividerInput.setText(com.dhruvtilva.pushalert.domain.AppSettings.DEFAULT_DIVIDER)
+        }, ui.lp(w = 0, weight = 1f, start = 4))
+        col.addView(dividerRow, ui.lp(top = 6))
 
         // ---- C. Inbox
         col.addView(ui.title("Inbox & history"))
