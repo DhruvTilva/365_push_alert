@@ -37,16 +37,6 @@ object TextRules {
         return BLANK_LINE_RUN.replace(lines, "\n\n").trim()
     }
 
-    private val PARAGRAPH_BREAK = Regex("\n[ \t]*\n+")
-
-    /**
-     * Splits a text at blank lines into separate non-empty parts (paragraph blocks). A text without a
-     * blank line yields a single part. Used so one notification that carries several messages is
-     * published as several Discord messages.
-     */
-    fun splitParagraphs(text: String): List<String> =
-        PARAGRAPH_BREAK.split(text.replace("\r\n", "\n").replace('\r', '\n')).map { it.trim() }.filter { it.isNotEmpty() }
-
     /** Key used for case-insensitive exact comparison of group / sender names. */
     fun normalizeKey(raw: String): String =
         WHITESPACE_RUN.replace(Normalizer.normalize(stripInvisible(raw), Normalizer.Form.NFKC).trim(), " ")

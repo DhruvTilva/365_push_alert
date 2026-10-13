@@ -116,41 +116,6 @@ class Store(
         result
     }
 
-    /**
-     * Splits a waiting message at blank lines into separate inbox messages (same group/sender, kept in
-     * order). Returns the number of messages afterwards (1 = nothing to split).
-     */
-    suspend fun splitMessage(id: Long): Int = io {
-        val result = db.transaction {
-            val m = loadMessage(id) ?: return@transaction 0
-            if (m.status != MessageStatus.PENDING && m.status != MessageStatus.EDITED) return@transaction 1
-            val parts = TextRules.splitParagraphs(m.currentText)
-            if (parts.size < 2) return@transaction 1
-            val now = clock()
-            db.update(
-                "UPDATE messages SET original_text = ?, edited_text = NULL, status = ?, updated_at = ? WHERE id = ?",
-                parts[0], MessageStatus.PENDING.name, now, id,
-            )
-            parts.drop(1).forEachIndexed { i, text ->
-                val fp = m.fingerprint + "#split" + (i + 1)
-                db.exec(
-                    "INSERT OR IGNORE INTO seen_fingerprints(fingerprint, seen_at, timed) VALUES(?,?,1)", fp, now,
-                )
-                db.insert(
-                    """INSERT INTO messages(source_package, group_name, conversation_id, sender_name, original_text,
-                        received_at, fingerprint, status, selected, updated_at, truncated)
-                       VALUES(?,?,?,?,?,?,?,?,?,?,?)""",
-                    m.sourcePackage, m.groupName, m.conversationId, m.senderName, text,
-                    m.receivedAt, fp, MessageStatus.PENDING.name, m.selected, now,
-                    m.possiblyTruncated && i == parts.size - 2,
-                )
-            }
-            parts.size
-        }
-        if (result > 1) changed()
-        result
-    }
-
     suspend fun restoreOriginal(id: Long): EditResult {
         val m = getMessage(id) ?: return EditResult.NotFound
         return editText(id, m.originalText)

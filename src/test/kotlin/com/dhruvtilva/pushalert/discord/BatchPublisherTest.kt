@@ -5,6 +5,7 @@ import com.dhruvtilva.pushalert.TestClock
 import com.dhruvtilva.pushalert.VALID_WEBHOOK
 import com.dhruvtilva.pushalert.domain.AddResult
 import com.dhruvtilva.pushalert.domain.AppSettings
+import com.dhruvtilva.pushalert.domain.DividerStyle
 import com.dhruvtilva.pushalert.domain.MessageStatus
 import com.dhruvtilva.pushalert.domain.NewMessage
 import com.dhruvtilva.pushalert.domain.ValidationResult
@@ -29,7 +30,7 @@ class BatchPublisherTest {
     private val transport = FakeTransport()
     private val client = DiscordClient(transport, Dispatchers.Unconfined)
     private var hook: WebhookUrl? = (WebhookUrl.parse(VALID_WEBHOOK) as WebhookUrl.ParseResult.Valid).url
-    private var settings = AppSettings(addHeader = false)
+    private var settings = AppSettings(dividerStyle = DividerStyle.NONE)
     private var n = 0
 
     private fun TestScope.publisher() = BatchPublisher(store, client, { hook }, { settings }, this)
@@ -322,22 +323,22 @@ class BatchPublisherTest {
         assertTrue("waited ${currentTime}ms", currentTime >= 1000)
     }
 
-    @Test fun dividerLineIsAddedToEveryMessageWithRunningNumbers() = runTest {
-        settings = settings.copy(addHeader = true, headerTitle = "Terminal365 Update", nextUpdateNumber = 7)
+    @Test fun headingDividerIsAddedToEveryMessageWithRunningNumbers() = runTest {
+        settings = settings.copy(dividerStyle = DividerStyle.HEADING, headerTitle = "Terminal365 Update", nextUpdateNumber = 7)
         val ids = listOf(add("m1"), add("m2"))
         var published = 0
         val pub = BatchPublisher(store, client, { hook }, { settings.copy(nextUpdateNumber = 7L + published) }, this, onPublished = { published++ })
         run(pub, ids)
         assertEquals(2, transport.requests.size)
-        assertTrue(bodies()[0], bodies()[0].contains("\"content\":\"====== Terminal365 Update #7 ======\\nm1\""))
-        assertTrue(bodies()[1], bodies()[1].contains("\"content\":\"====== Terminal365 Update #8 ======\\nm2\""))
+        assertTrue(bodies()[0], bodies()[0].contains("\"content\":\"### Terminal365 Update #7\\nm1\""))
+        assertTrue(bodies()[1], bodies()[1].contains("\"content\":\"### Terminal365 Update #8\\nm2\""))
         assertFalse(bodies()[0].contains("Project Updates") || bodies()[0].contains("Alice"))
         assertEquals("m1", store.history().last().publishedText)
         assertEquals(2, published)
     }
 
     @Test fun updateNumberIsNotConsumedByFailedMessages() = runTest {
-        settings = settings.copy(addHeader = true)
+        settings = settings.copy(dividerStyle = DividerStyle.HEADING)
         val id = add("m1")
         var published = 0
         val pub = BatchPublisher(store, client, { hook }, { settings.copy(nextUpdateNumber = 1L + published) }, this, onPublished = { published++ })
@@ -346,19 +347,19 @@ class BatchPublisherTest {
         assertEquals(0, published)
         pub.dismiss()
         run(pub, listOf(id))
-        assertTrue(bodies().last().contains("#1 ======"))
+        assertTrue(bodies().last().contains("### Terminal365 Update #1\\n"))
         assertEquals(1, published)
     }
 
     @Test fun headerCountsTowardTheDiscordLimitAndIsExplained() = runTest {
-        settings = settings.copy(addHeader = true)
+        settings = settings.copy(dividerStyle = DividerStyle.HEADING)
         val id = add("x".repeat(1990))
         val pub = publisher()
         assertEquals(1, pub.preflight(listOf(id)).invalid.size)
         run(pub, listOf(id))
         assertEquals(0, transport.requests.size)
         assertTrue(store.getMessage(id)!!.lastError!!.contains("divider"))
-        settings = settings.copy(addHeader = false)
+        settings = settings.copy(dividerStyle = DividerStyle.NONE)
         pub.dismiss()
         run(pub, listOf(id))
         assertEquals(1, transport.requests.size)

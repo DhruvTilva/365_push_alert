@@ -5,6 +5,7 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import com.dhruvtilva.pushalert.discord.WebhookUrl
 import com.dhruvtilva.pushalert.domain.AppSettings
+import com.dhruvtilva.pushalert.domain.DividerStyle
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -46,8 +47,8 @@ class SettingsStore(private val kv: KeyValueStore) {
             allowIndividualChats = kv.getBoolean(K_INDIVIDUAL, defaults.allowIndividualChats),
             historyEnabled = kv.getBoolean(K_HISTORY, defaults.historyEnabled),
             diagnosticsEnabled = kv.getBoolean(K_DIAGNOSTICS, defaults.diagnosticsEnabled),
-            splitAtBlankLines = kv.getBoolean(K_SPLIT, defaults.splitAtBlankLines),
-            addHeader = kv.getBoolean(K_HEADER, defaults.addHeader),
+            dividerStyle = kv.getString(K_STYLE)?.let { DividerStyle.parse(it) }
+                ?: if (!kv.getBoolean(K_HEADER, true)) DividerStyle.NONE else defaults.dividerStyle,
             headerTitle = kv.getString(K_TITLE)?.takeIf { it.isNotBlank() } ?: defaults.headerTitle,
             nextUpdateNumber = kv.getString(K_NUMBER)?.toLongOrNull()?.takeIf { it >= 1 } ?: defaults.nextUpdateNumber,
             whatsappPackages = packages,
@@ -76,8 +77,7 @@ class SettingsStore(private val kv: KeyValueStore) {
         state.value = state.value.copy(nextUpdateNumber = n)
     }
 
-    fun setAddHeader(v: Boolean) { kv.putBoolean(K_HEADER, v); state.value = state.value.copy(addHeader = v) }
-    fun setSplitAtBlankLines(v: Boolean) { kv.putBoolean(K_SPLIT, v); state.value = state.value.copy(splitAtBlankLines = v) }
+    fun setDividerStyle(v: DividerStyle) { kv.putString(K_STYLE, v.name); state.value = state.value.copy(dividerStyle = v) }
     fun setDiagnosticsEnabled(v: Boolean) { kv.putBoolean(K_DIAGNOSTICS, v); state.value = state.value.copy(diagnosticsEnabled = v) }
 
     /** Returns an error message if any entry is not a plausible Android package name. */
@@ -102,8 +102,8 @@ class SettingsStore(private val kv: KeyValueStore) {
         private const val K_HISTORY = "history_enabled"
         private const val K_DIAGNOSTICS = "diagnostics_enabled"
         private const val K_PACKAGES = "whatsapp_packages"
-        private const val K_SPLIT = "split_at_blank_lines"
-        private const val K_HEADER = "add_header"
+        private const val K_HEADER = "add_header" // legacy on/off switch, read once for migration
+        private const val K_STYLE = "divider_style"
         private const val K_TITLE = "header_title"
         private const val K_NUMBER = "next_update_number"
         private val PACKAGE_NAME = Regex("^[A-Za-z][A-Za-z0-9_]*(\\.[A-Za-z][A-Za-z0-9_]*)+$")

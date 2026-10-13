@@ -111,4 +111,16 @@ class SettingsAndSecretsTest {
         assertNotNull(a.setHeader("ok", "abc"))
         assertEquals("Terminal365 Update", a.settings.value.headerTitle)
     }
+
+    @Test fun dividerStyleDefaultsToHeadingAndPersists() {
+        val kv = MemoryKv()
+        assertEquals(com.dhruvtilva.pushalert.domain.DividerStyle.HEADING, SettingsStore(kv).settings.value.dividerStyle)
+        SettingsStore(kv).setDividerStyle(com.dhruvtilva.pushalert.domain.DividerStyle.SMALL)
+        assertEquals(com.dhruvtilva.pushalert.domain.DividerStyle.SMALL, SettingsStore(kv).settings.value.dividerStyle)
+    }
+
+    @Test fun oldHeaderOffSettingMigratesToNoDivider() {
+        val kv = MemoryKv().also { it.putBoolean("add_header", false) }
+        assertEquals(com.dhruvtilva.pushalert.domain.DividerStyle.NONE, SettingsStore(kv).settings.value.dividerStyle)
+    }
 }

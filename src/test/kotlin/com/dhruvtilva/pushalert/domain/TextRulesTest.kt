@@ -33,9 +33,4 @@ class TextRulesTest {
         assertTrue(TextRules.validate(emoji).isValid)
     }
 
-    @Test fun splitParagraphsSeparatesBlocksAtBlankLines() {
-        assertEquals(listOf("a\nb", "c", "d"), TextRules.splitParagraphs("a\nb\n\nc\n \n\n\nd\n"))
-        assertEquals(listOf("single\nline pair"), TextRules.splitParagraphs("single\nline pair"))
-        assertEquals(emptyList<String>(), TextRules.splitParagraphs(" \n\n "))
-    }
 }

@@ -60,23 +60,27 @@ class SettingsScreen(private val activity: Activity, private val graph: AppGraph
 
         collectionCheck = ui.check("Collect WhatsApp notifications", s.settings.value.collectionEnabled) { s.setCollectionEnabled(it) }
         col.addView(collectionCheck)
-        col.addView(
-            ui.check("Add a divider line ====== <title> #<number> ====== above every Discord message", s.settings.value.addHeader) { s.setAddHeader(it) },
-        )
+        col.addView(ui.text("Divider above every Discord message", 14f, p.text, true), ui.lp(top = 10))
+        val styleSpinner = android.widget.Spinner(activity)
+        val styles = com.dhruvtilva.pushalert.domain.DividerStyle.values().toList()
+        styleSpinner.adapter = android.widget.ArrayAdapter(activity, android.R.layout.simple_spinner_dropdown_item, styles.map { it.label })
+        styleSpinner.setSelection(styles.indexOf(s.settings.value.dividerStyle))
+        styleSpinner.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: android.widget.AdapterView<*>?, v: View?, pos: Int, id: Long) { s.setDividerStyle(styles[pos]) }
+            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+        }
+        col.addView(styleSpinner)
         val titleInput = ui.input("Divider title").apply { setText(s.settings.value.headerTitle) }
         val numberInput = ui.input("Next number").apply {
             setText(s.settings.value.nextUpdateNumber.toString()); inputType = InputType.TYPE_CLASS_NUMBER
         }
-        col.addView(ui.sub("Each Discord message starts with:  ====== <title> #<number> ======"), ui.lp(top = 4))
+        col.addView(ui.sub("Example: ### <title> #<number> (the received message text is never changed or split)"), ui.lp(top = 4))
         col.addView(titleInput)
         col.addView(numberInput)
         col.addView(ui.button("Save divider") {
             val err = s.setHeader(titleInput.text.toString(), numberInput.text.toString())
-            toast(err ?: "Saved. Next message: ====== ${s.settings.value.headerTitle} #${s.settings.value.nextUpdateNumber} ======")
+            toast(err ?: "Saved. Next message: ${s.settings.value.headerTitle} #${s.settings.value.nextUpdateNumber}")
         }, ui.lp(top = 4))
-        col.addView(
-            ui.check("Split a notification into separate messages at blank lines", s.settings.value.splitAtBlankLines) { s.setSplitAtBlankLines(it) },
-        )
         individualCheck = ui.check("Also collect individual chats whose contact name matches a configured name", s.settings.value.allowIndividualChats) { s.setAllowIndividualChats(it) }
         col.addView(individualCheck)
 

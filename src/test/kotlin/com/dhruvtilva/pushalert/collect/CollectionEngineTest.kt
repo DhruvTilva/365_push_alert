@@ -166,30 +166,23 @@ class CollectionEngineTest {
         assertTrue(store.diagnostics().isEmpty())
     }
 
-    private val marketPost = "Keep your eye out on Kospi\nKospi -3.65%\n\nNifty weekly expiry today\nNifty -157 pts\n\nResult Reaction\nHCL Tech; Neutral\n\n#Cues #Markets"
 
-    @Test fun oneNotificationWithSeveralBlocksBecomesSeparateInboxMessagesInOrder() = runTest {
+
+
+
+    private val longPost = "Keep your eye out on Kospi\nKospi -3.65%\n\nNifty weekly expiry today\nNifty -157 pts\n\n\u2022 bullet one\n\n#Cues #Markets"
+
+    @Test fun aReceivedMessageIsKeptWholeEvenWithBlankLinesInside() = runTest {
         group("Project Updates")
-        val o = engine.process(wa(text = marketPost))
-        assertEquals(4, o.added)
-        assertEquals(
-            listOf("Keep your eye out on Kospi\nKospi -3.65%", "Nifty weekly expiry today\nNifty -157 pts", "Result Reaction\nHCL Tech; Neutral", "#Cues #Markets"),
-            store.pendingMessages().map { it.originalText },
-        )
+        assertEquals(1, engine.process(wa(text = longPost, bigText = longPost)).added)
+        assertEquals(longPost, store.pendingMessages().single().originalText)
     }
 
-    @Test fun splitPartsOfMessagingStyleEntriesStayOrderedAndAreNotDuplicatedOnRepost() = runTest {
+    @Test fun eachReceivedMessageOfABundleStaysOneWholeEntry() = runTest {
         group("Project Updates")
-        val n = wa(messages = listOf(RawMessage("one\n\ntwo", 1000, "Alice"), RawMessage("three", 5000, "Bob")))
-        assertEquals(3, engine.process(n).added)
+        val n = wa(messages = listOf(RawMessage("one\n\nstill one", 1000, "Alice"), RawMessage("two", 5000, "Bob")))
+        assertEquals(2, engine.process(n).added)
         assertEquals(0, engine.process(n).added)
-        assertEquals(listOf("one", "two", "three"), store.pendingMessages().map { it.originalText })
-    }
-
-    @Test fun splittingCanBeSwitchedOff() = runTest {
-        group("Project Updates")
-        cfg = cfg.copy(splitAtBlankLines = false)
-        assertEquals(1, engine.process(wa(text = marketPost)).added)
-        assertEquals(marketPost, store.pendingMessages().single().originalText)
+        assertEquals(listOf("one\n\nstill one", "two"), store.pendingMessages().map { it.originalText })
     }
 }

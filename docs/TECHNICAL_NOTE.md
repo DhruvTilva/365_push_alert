@@ -90,3 +90,7 @@ SQLite (`pushalert.db`, WAL). Tables: `group_filters`, `messages`, `sent_history
 ## 10. Build toolchain note (dexing)
 
 The APK is dexed with `dx` (build-tools 29), because D8/R8 are only published on the unreachable Google Maven repository. `dx` is old, so the app deliberately uses the Kotlin **1.9.25** compiler with matching stdlib 1.9.25 and coroutines-core 1.8.1 (compiler and runtime library versions must match: a newer compiler emits helper calls such as `kotlin.coroutines.jvm.internal.SpillingKt` that older stdlibs lack), compiles lambdas/SAMs to classes (`-Xlambdas=class -Xsam-conversions=class`), and avoids `kotlinx-coroutines-android`. The remaining `invoke-custom` sites in the dex are in library classes the app never loads (comparator helpers, Future/Stream interop, thread-pool, debug agent).
+
+## 11. Message separation in Discord
+
+Discord visually merges consecutive webhook posts from the same sender under one avatar/name header, so a divider is prepended to each message (`### <title> #<n>`, `-# <title> #<n>`, or a rule plus bold title; configurable, or none). The text itself is never split, merged or rewritten: each received message (each `EXTRA_MESSAGES` entry, or the single notification text) maps to exactly one inbox entry and one Discord message. The running number only advances after a message is confirmed delivered.

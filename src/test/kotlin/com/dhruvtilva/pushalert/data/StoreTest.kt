@@ -314,31 +314,5 @@ class StoreTest {
         db2.close()
     }
 
-    @Test fun splitMessageTurnsOneEntryIntoSeveralInOrder() = runTest {
-        val id = add("first part\nline2\n\nsecond part\n\nthird part", at = 5000)
-        store.setSelected(listOf(id), true)
-        assertEquals(3, store.splitMessage(id))
-        val all = store.pendingMessages()
-        assertEquals(listOf("first part\nline2", "second part", "third part"), all.map { it.currentText })
-        assertTrue(all.all { it.status == MessageStatus.PENDING && it.selected && it.groupName == "Project Updates" && it.senderName == "Alice" })
-        assertEquals(setOf(5000L), all.map { it.receivedAt }.toSet())
-        assertEquals(3, all.map { it.fingerprint }.toSet().size)
-    }
 
-    @Test fun splitUsesTheEditedTextAndLeavesSingleParagraphsAlone() = runTest {
-        val id = add("original")
-        store.editText(id, "edited a\n\nedited b")
-        assertEquals(2, store.splitMessage(id))
-        assertEquals(listOf("edited a", "edited b"), store.pendingMessages().map { it.currentText })
-        val single = add("just one paragraph")
-        assertEquals(1, store.splitMessage(single))
-        assertEquals(1, store.splitMessage(99999).coerceAtLeast(1))
-    }
-
-    @Test fun splitIsRefusedWhileSendingOrAfterFailure() = runTest {
-        val id = add("a\n\nb")
-        store.beginSending(id)
-        assertEquals(1, store.splitMessage(id))
-        assertEquals(1, store.pendingMessages().size)
-    }
 }
