@@ -66,7 +66,6 @@ class BatchPublisher(
     private val settings: () -> AppSettings,
     private val scope: CoroutineScope,
     private val pause: suspend (Long) -> Unit = { delay(it) },
-    private val zone: java.util.TimeZone = java.util.TimeZone.getDefault(),
     private val onPublished: () -> Unit = {},
 ) {
     private val running = AtomicBoolean(false)
@@ -134,7 +133,7 @@ class BatchPublisher(
             val content = render(message, settings())
             val validation = TextRules.validate(content)
             if (!validation.isValid) {
-                store.markFailed(id, (validation.userMessage() ?: "Invalid message.") + if (settings().addHeader) " (includes the header line; shorten it or turn the header off in Settings.)" else "")
+                store.markFailed(id, (validation.userMessage() ?: "Invalid message.") + if (settings().addHeader) " (includes the divider line; shorten it or turn the divider off in Settings.)" else "")
                 update { it.copy(failed = it.failed + 1) }
                 continue
             }
@@ -225,7 +224,7 @@ class BatchPublisher(
     }
 
     private fun render(m: PendingMessage, cfg: AppSettings): String =
-        MessageFormat.render(m, cfg.addHeader, cfg.headerTitle, cfg.nextUpdateNumber, zone)
+        MessageFormat.render(m, cfg.addHeader, cfg.headerTitle, cfg.nextUpdateNumber)
 
     /** Waits in short slices so a cancel request is honoured; returns false if cancelled. */
     private suspend fun waitInterruptibly(ms: Long): Boolean {

@@ -22,7 +22,7 @@ own Discord webhook (when you publish or press *Test connection*).
 - Editing keeps the original notification text separate from the text that will be published; 2,000-character Discord limit enforced (never silently truncated).
 - **Push Selected to Discord**: preview + confirmation, sequential sending in displayed order,
   progress, cancel between messages, rate-limit handling, bounded retries, per-message result.
-- **Every Discord message is visibly separate.** Discord merges consecutive posts from the same sender under one header, so each message starts with a divider line `====== Terminal365 Update #N ======` (title editable, `N` counts published messages) followed by a bold *group · sender · time* line. Both can be switched off in Settings (the header counts toward Discord's 2,000-character limit).
+- **Every Discord message is visibly separate.** Discord merges consecutive posts from the same sender under one header, so each message starts with a divider line `====== Terminal365 Update #N ======` (title editable, `N` counts published messages) followed directly by the message text. It can be switched off in Settings (the divider counts toward Discord's 2,000-character limit).
 - A notification whose text contains several blocks separated by blank lines is split into separate inbox messages (switchable); an existing entry can be split with its **Split** button.
 - Failed messages stay for retry; **Delivery uncertain** messages are never retried automatically.
 - Sent History (can be turned off, then content is deleted as soon as it is published).
@@ -36,7 +36,7 @@ Inbox · Sent · Settings (WhatsApp collection & group filters, Discord webhook,
 
 ## Install the APK
 
-The prebuilt debug APK is at **`artifacts/365-push-alert-debug.apk`** (application id `com.dhruvtilva.pushalert`, version 1.0.3, minSdk 26 / Android 8.0, targetSdk 34).
+The prebuilt debug APK is at **`artifacts/365-push-alert-debug.apk`** (application id `com.dhruvtilva.pushalert`, version 1.0.4, minSdk 26 / Android 8.0, targetSdk 34).
 
 1. Copy the APK to your phone (download from the repo, USB, cloud drive, …) or use `adb install -r artifacts/365-push-alert-debug.apk`.
 2. Open it on the phone and allow *Install unknown apps* for the app you opened it from.
@@ -106,7 +106,7 @@ Version history: 1.0.1 fixes a start-up failure seen on a real phone by moving t
 
 | Area | Status |
 |---|---|
-| 184 JVM tests (parser, group filter, de-dup, store/SQL, migrations, editing, state machine, Discord client, real HTTP transport against local servers, publisher scenarios, secret storage) plus Robolectric tests that launch the real Application/Activity on real Android framework code (real SQLite and Views) | executed, all pass |
+| 185 JVM tests (parser, group filter, de-dup, store/SQL, migrations, editing, state machine, Discord client, real HTTP transport against local servers, publisher scenarios, secret storage) plus Robolectric tests that launch the real Application/Activity on real Android framework code (real SQLite and Views) | executed, all pass |
 | Kotlin compile with warnings-as-errors; permission / secret / logging static checks | executed, pass |
 | APK builds, aligned, signed (v2/v3), manifest & permissions inspected with `aapt` | executed, pass |
 | Android API use audited against min SDK 26 | done (no newer API used) |

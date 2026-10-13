@@ -61,16 +61,16 @@ class SettingsScreen(private val activity: Activity, private val graph: AppGraph
         collectionCheck = ui.check("Collect WhatsApp notifications", s.settings.value.collectionEnabled) { s.setCollectionEnabled(it) }
         col.addView(collectionCheck)
         col.addView(
-            ui.check("Add a header line (group · sender · time) to every Discord message", s.settings.value.addHeader) { s.setAddHeader(it) },
+            ui.check("Add a divider line ====== <title> #<number> ====== above every Discord message", s.settings.value.addHeader) { s.setAddHeader(it) },
         )
-        val titleInput = ui.input("Header title").apply { setText(s.settings.value.headerTitle) }
+        val titleInput = ui.input("Divider title").apply { setText(s.settings.value.headerTitle) }
         val numberInput = ui.input("Next number").apply {
             setText(s.settings.value.nextUpdateNumber.toString()); inputType = InputType.TYPE_CLASS_NUMBER
         }
-        col.addView(ui.sub("Each Discord message starts with a divider line:  ====== <title> #<number> ======"), ui.lp(top = 4))
+        col.addView(ui.sub("Each Discord message starts with:  ====== <title> #<number> ======"), ui.lp(top = 4))
         col.addView(titleInput)
         col.addView(numberInput)
-        col.addView(ui.button("Save header") {
+        col.addView(ui.button("Save divider") {
             val err = s.setHeader(titleInput.text.toString(), numberInput.text.toString())
             toast(err ?: "Saved. Next message: ====== ${s.settings.value.headerTitle} #${s.settings.value.nextUpdateNumber} ======")
         }, ui.lp(top = 4))

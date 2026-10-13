@@ -15,8 +15,8 @@ plugins {
 // ---------------------------------------------------------------------------------------------
 
 val appId = "com.dhruvtilva.pushalert"
-val appVersionName = "1.0.3"
-val appVersionCode = 4
+val appVersionName = "1.0.4"
+val appVersionCode = 5
 val minSdk = 26
 val targetSdk = 34
 

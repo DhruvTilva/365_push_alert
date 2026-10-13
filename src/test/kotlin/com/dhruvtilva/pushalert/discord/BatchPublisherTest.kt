@@ -32,7 +32,7 @@ class BatchPublisherTest {
     private var settings = AppSettings(addHeader = false)
     private var n = 0
 
-    private fun TestScope.publisher() = BatchPublisher(store, client, { hook }, { settings }, this, zone = java.util.TimeZone.getTimeZone("UTC"))
+    private fun TestScope.publisher() = BatchPublisher(store, client, { hook }, { settings }, this)
 
     private suspend fun add(text: String): Long =
         (store.addIfNew(NewMessage("com.whatsapp", "Project Updates", null, null, "Alice", text, 1000L + n, "fp${n++}", true, false)) as AddResult.Added).id
@@ -322,15 +322,16 @@ class BatchPublisherTest {
         assertTrue("waited ${currentTime}ms", currentTime >= 1000)
     }
 
-    @Test fun dividerAndHeaderLinesAreAddedToEveryMessageWithRunningNumbers() = runTest {
+    @Test fun dividerLineIsAddedToEveryMessageWithRunningNumbers() = runTest {
         settings = settings.copy(addHeader = true, headerTitle = "Terminal365 Update", nextUpdateNumber = 7)
         val ids = listOf(add("m1"), add("m2"))
         var published = 0
-        val pub = BatchPublisher(store, client, { hook }, { settings.copy(nextUpdateNumber = 7L + published) }, this, zone = java.util.TimeZone.getTimeZone("UTC"), onPublished = { published++ })
+        val pub = BatchPublisher(store, client, { hook }, { settings.copy(nextUpdateNumber = 7L + published) }, this, onPublished = { published++ })
         run(pub, ids)
         assertEquals(2, transport.requests.size)
-        assertTrue(bodies()[0], bodies()[0].contains("\"content\":\"====== Terminal365 Update #7 ======\\n**Project Updates** \u00b7 Alice \u00b7 1 Jan, 00:00\\nm1\""))
-        assertTrue(bodies()[1], bodies()[1].contains("====== Terminal365 Update #8 ======") && bodies()[1].contains("\\nm2\""))
+        assertTrue(bodies()[0], bodies()[0].contains("\"content\":\"====== Terminal365 Update #7 ======\\nm1\""))
+        assertTrue(bodies()[1], bodies()[1].contains("\"content\":\"====== Terminal365 Update #8 ======\\nm2\""))
+        assertFalse(bodies()[0].contains("Project Updates") || bodies()[0].contains("Alice"))
         assertEquals("m1", store.history().last().publishedText)
         assertEquals(2, published)
     }
@@ -356,7 +357,7 @@ class BatchPublisherTest {
         assertEquals(1, pub.preflight(listOf(id)).invalid.size)
         run(pub, listOf(id))
         assertEquals(0, transport.requests.size)
-        assertTrue(store.getMessage(id)!!.lastError!!.contains("header"))
+        assertTrue(store.getMessage(id)!!.lastError!!.contains("divider"))
         settings = settings.copy(addHeader = false)
         pub.dismiss()
         run(pub, listOf(id))
