@@ -36,7 +36,7 @@ Inbox · Sent · Settings (WhatsApp collection & group filters, Discord webhook,
 
 ## Install the APK
 
-The prebuilt debug APK is at **`artifacts/365-push-alert-debug.apk`** (application id `com.dhruvtilva.pushalert`, version 1.0.8, minSdk 26 / Android 8.0, targetSdk 34).
+The prebuilt debug APK is at **`artifacts/365-push-alert-debug.apk`** (application id `com.dhruvtilva.pushalert`, version 1.0.9, minSdk 26 / Android 8.0, targetSdk 34).
 
 1. Copy the APK to your phone (download from the repo, USB, cloud drive, …) or use `adb install -r artifacts/365-push-alert-debug.apk`.
 2. Open it on the phone and allow *Install unknown apps* for the app you opened it from.
@@ -106,7 +106,7 @@ Version history: 1.0.1 fixes a start-up failure seen on a real phone by moving t
 
 | Area | Status |
 |---|---|
-| 187 JVM tests (parser, group filter, de-dup, store/SQL, migrations, editing, state machine, Discord client, real HTTP transport against local servers, publisher scenarios, secret storage) plus Robolectric tests that launch the real Application/Activity on real Android framework code (real SQLite and Views) | executed, all pass |
+| 190 JVM tests (parser, group filter, de-dup, store/SQL, migrations, editing, state machine, Discord client, real HTTP transport against local servers, publisher scenarios, secret storage) plus Robolectric tests that launch the real Application/Activity on real Android framework code (real SQLite and Views) | executed, all pass |
 | Kotlin compile with warnings-as-errors; permission / secret / logging static checks | executed, pass |
 | APK builds, aligned, signed (v2/v3), manifest & permissions inspected with `aapt` | executed, pass |
 | Android API use audited against min SDK 26 | done (no newer API used) |

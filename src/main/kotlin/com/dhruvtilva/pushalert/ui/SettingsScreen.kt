@@ -115,7 +115,7 @@ class SettingsScreen(private val activity: Activity, private val graph: AppGraph
 
         // ---- Divider (fully editable text above every Discord message)
         col.addView(ui.text("Divider above every Discord message", 16f, p.text, true), ui.lp(top = 14))
-        col.addView(ui.sub("Any text, emojis and Discord formatting (### = heading, -# = small, ** = bold). Placeholders: {n} running number, {group}, {sender}, {date}, {time}. Leave empty for no divider. A blank line is added after it."), ui.lp(bottom = 4))
+        col.addView(ui.sub("Any text, emojis and Discord formatting (### = heading, -# = small, ** = bold). Placeholders: {n} running number, {group}, {sender}, {date}, {time}. Leave empty for no divider. One blank line is added after it; press Enter at the end of the box to add more blank lines."), ui.lp(bottom = 4))
         val dividerInput = ui.input("Divider text", multiline = true).apply { minLines = 2; setText(s.settings.value.dividerTemplate) }
         val numberInput = ui.input("Next number").apply {
             setText(s.settings.value.nextUpdateNumber.toString()); inputType = InputType.TYPE_CLASS_NUMBER

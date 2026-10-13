@@ -26,9 +26,13 @@ object MessageFormat {
             .trim()
     }
 
-    /** divider, a blank line for breathing room, then the message text exactly as it is. */
+    /** Extra Enter presses at the very end of the template, each adding one more blank line (max 5). */
+    fun extraBlankLines(template: String): Int =
+        template.trimEnd().let { core -> template.substring(core.length).count { it == '\n' } }.coerceIn(0, 5)
+
+    /** divider, one blank line, [extraBlankLines] more if the template ends with extra Enters, then the text. */
     fun render(m: PendingMessage, template: String, number: Long, zone: TimeZone = TimeZone.getDefault()): String {
         val d = divider(template, m, number, zone)
-        return if (d.isEmpty()) m.currentText else d + "\n\n" + m.currentText
+        return if (d.isEmpty()) m.currentText else d + "\n\n" + "\n".repeat(extraBlankLines(template)) + m.currentText
     }
 }

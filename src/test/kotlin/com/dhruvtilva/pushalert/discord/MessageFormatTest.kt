@@ -57,4 +57,17 @@ class MessageFormatTest {
     @Test fun editedTextIsWhatGetsRendered() {
         assertEquals("### T #1\n\nnew", MessageFormat.render(msg().copy(editedText = "new"), "### T #{n}", 1, utc))
     }
+
+    @Test fun extraEntersAtTheEndAddExtraBlankLines() {
+        assertEquals("### T #1\n\n$text", MessageFormat.render(msg(), "### T #{n}", 1, utc))
+        assertEquals("### T #1\n\n\n$text", MessageFormat.render(msg(), "### T #{n}\n", 1, utc))
+        assertEquals("### T #1\n\n\n\n$text", MessageFormat.render(msg(), "### T #{n}\n\n", 1, utc))
+        assertEquals(0, MessageFormat.extraBlankLines("abc"))
+        assertEquals(2, MessageFormat.extraBlankLines("abc \n \n"))
+        assertEquals(5, MessageFormat.extraBlankLines("abc" + "\n".repeat(20)))
+    }
+
+    @Test fun enterInTheMiddleIsAnOrdinaryLineBreakAndNoExtraSpace() {
+        assertEquals("A\nB\n\n$text", MessageFormat.render(msg(), "A\nB", 1, utc))
+    }
 }

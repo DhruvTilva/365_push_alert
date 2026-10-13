@@ -57,7 +57,8 @@ class SettingsStore(private val kv: KeyValueStore) {
     fun setHistoryEnabled(v: Boolean) { kv.putBoolean(K_HISTORY, v); state.value = state.value.copy(historyEnabled = v) }
     /** Saves the divider template and next number. Returns an error message, or null when saved. */
     fun setDivider(template: String, nextNumber: String): String? {
-        val t = template.replace("\r\n", "\n").trim()
+        // keep trailing newlines: each one adds an extra blank line after the divider
+        val t = template.replace("\r\n", "\n").trimStart().trimEnd(' ', '\t').let { if (it.isBlank()) "" else it }
         if (t.length > MAX_DIVIDER) return "Divider is too long (max $MAX_DIVIDER characters)."
         val n = nextNumber.trim().toLongOrNull()
         if (n == null || n < 1 || n > 999_999_999) return "Next number must be a whole number of 1 or more."

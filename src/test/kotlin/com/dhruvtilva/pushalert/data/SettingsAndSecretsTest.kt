@@ -130,4 +130,13 @@ class SettingsAndSecretsTest {
         assertEquals("### \uD83D\uDEA8 My Feed #{n}", SettingsStore(custom).settings.value.dividerTemplate)
     }
 
+
+    @Test fun trailingEntersInTheDividerAreKeptButOtherWhitespaceIsTrimmed() {
+        val kv = MemoryKv()
+        val a = SettingsStore(kv)
+        assertNull(a.setDivider("  ### T #{n}\n\n  ", "1"))
+        assertEquals("### T #{n}\n\n", SettingsStore(kv).settings.value.dividerTemplate)
+        assertNull(a.setDivider(" \n \n ", "1"))
+        assertEquals("", SettingsStore(kv).settings.value.dividerTemplate)
+    }
 }
