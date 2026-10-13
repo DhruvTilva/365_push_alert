@@ -347,7 +347,7 @@ class BatchPublisherTest {
         assertEquals(0, published)
         pub.dismiss()
         run(pub, listOf(id))
-        assertTrue(bodies().last().contains("### Terminal365 Update #1\\n"))
+        assertTrue(bodies().last().contains("### " + settings.headerTitle + " #1\\n"))
         assertEquals(1, published)
     }
 

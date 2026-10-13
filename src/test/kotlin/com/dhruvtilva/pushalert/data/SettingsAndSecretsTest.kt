@@ -93,7 +93,7 @@ class SettingsAndSecretsTest {
     @Test fun headerTitleAndNumberPersistAndAdvance() {
         val kv = MemoryKv()
         val a = SettingsStore(kv)
-        assertEquals("Terminal365 Update", a.settings.value.headerTitle)
+        assertEquals("\uD83D\uDCE2 Terminal365 Update", a.settings.value.headerTitle)
         assertEquals(1L, a.settings.value.nextUpdateNumber)
         assertNull(a.setHeader("  My Feed ", "41"))
         a.advanceUpdateNumber()
@@ -109,7 +109,7 @@ class SettingsAndSecretsTest {
         assertNotNull(a.setHeader("two\nlines", "1"))
         assertNotNull(a.setHeader("ok", "0"))
         assertNotNull(a.setHeader("ok", "abc"))
-        assertEquals("Terminal365 Update", a.settings.value.headerTitle)
+        assertEquals("\uD83D\uDCE2 Terminal365 Update", a.settings.value.headerTitle)
     }
 
     @Test fun dividerStyleDefaultsToHeadingAndPersists() {
@@ -122,5 +122,12 @@ class SettingsAndSecretsTest {
     @Test fun oldHeaderOffSettingMigratesToNoDivider() {
         val kv = MemoryKv().also { it.putBoolean("add_header", false) }
         assertEquals(com.dhruvtilva.pushalert.domain.DividerStyle.NONE, SettingsStore(kv).settings.value.dividerStyle)
+    }
+
+    @Test fun oldPlainDefaultTitleIsReplacedByTheEmojiDefaultButCustomTitlesAreKept() {
+        val old = MemoryKv().also { it.putString("header_title", "Terminal365 Update") }
+        assertEquals("\uD83D\uDCE2 Terminal365 Update", SettingsStore(old).settings.value.headerTitle)
+        val custom = MemoryKv().also { it.putString("header_title", "\uD83D\uDEA8 My Feed") }
+        assertEquals("\uD83D\uDEA8 My Feed", SettingsStore(custom).settings.value.headerTitle)
     }
 }

@@ -123,7 +123,7 @@ data class AppSettings(
     /** How each Discord message is visually separated from the previous one. */
     val dividerStyle: DividerStyle = DividerStyle.HEADING,
     /** Title in the divider, e.g. `### <title> #<n>`. */
-    val headerTitle: String = "Terminal365 Update",
+    val headerTitle: String = "\uD83D\uDCE2 Terminal365 Update",
     /** Number used for the next published message's divider line. */
     val nextUpdateNumber: Long = 1,
     val whatsappPackages: Set<String> = DEFAULT_WHATSAPP_PACKAGES,

@@ -49,7 +49,8 @@ class SettingsStore(private val kv: KeyValueStore) {
             diagnosticsEnabled = kv.getBoolean(K_DIAGNOSTICS, defaults.diagnosticsEnabled),
             dividerStyle = kv.getString(K_STYLE)?.let { DividerStyle.parse(it) }
                 ?: if (!kv.getBoolean(K_HEADER, true)) DividerStyle.NONE else defaults.dividerStyle,
-            headerTitle = kv.getString(K_TITLE)?.takeIf { it.isNotBlank() } ?: defaults.headerTitle,
+            // the pre-1.0.6 default had no emoji; adopt the new default unless the user chose their own title
+            headerTitle = kv.getString(K_TITLE)?.takeIf { it.isNotBlank() && it != "Terminal365 Update" } ?: defaults.headerTitle,
             nextUpdateNumber = kv.getString(K_NUMBER)?.toLongOrNull()?.takeIf { it >= 1 } ?: defaults.nextUpdateNumber,
             whatsappPackages = packages,
         )

@@ -74,7 +74,7 @@ class SettingsScreen(private val activity: Activity, private val graph: AppGraph
         val numberInput = ui.input("Next number").apply {
             setText(s.settings.value.nextUpdateNumber.toString()); inputType = InputType.TYPE_CLASS_NUMBER
         }
-        col.addView(ui.sub("Example: ### <title> #<number> (the received message text is never changed or split)"), ui.lp(top = 4))
+        col.addView(ui.sub("Example: ### <title> #<number>. You can put emojis in the title, e.g. \uD83D\uDCE2 \uD83D\uDEA8 \uD83D\uDCC8. The received message text is never changed or split."), ui.lp(top = 4))
         col.addView(titleInput)
         col.addView(numberInput)
         col.addView(ui.button("Save divider") {
